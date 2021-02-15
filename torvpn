@@ -1,0 +1,264 @@
+#!/usr/bin/env python3
+
+# imports.
+import os, sys, syst3m, cl1, json, netw0rk
+from r3sponse import r3sponse
+
+# settings.
+ALIAS = "torvpn"
+OS = syst3m.defaults.check_operating_system(supported=["osx"])
+
+# installation.
+if "-c" not in sys.argv:
+	os.system("clear")
+if "command not found" in syst3m.utils.__execute_script__("brew"):
+	os.system('/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)" && brew doctor')
+	if "command not found" in syst3m.utils.__execute_script__("brew"):
+		raise ValueError("HomeBrew is not installed.")
+if not os.path.exists("/usr/local/bin/tor"):
+	os.system('brew install tor tor-browser')
+	if not os.path.exists("/usr/local/bin/tor"):
+		raise ValueError("Tor is not installed.")
+if "--create-alias" in sys.argv:
+	os.system(f"cp {__file__} /usr/local/bin/{ALIAS} && chmod +x /usr/local/bin/{ALIAS}")
+	print(f"Succesfully installed $ {ALIAS}")
+	sys.exit(1)
+
+# the vpn object class.
+class VPN(object):
+	# networksetup: https://superuser.com/questions/316502/how-to-change-proxy-setting-using-command-line-in-mac-os
+	def __init__(self):
+		self.tor = Tor()
+		self.services = self.__get_services__()
+		self.server = "127.0.0.1"
+		self.port = 9050
+	def install(self):
+		for service in self.services:
+			response = self.__installed__(service=service)
+			if not r3sponse.success(response): 
+				r3sponse.log(response=response)
+				return response
+			elif not response["installed"]:
+				r3sponse.log(f"Installing the proxy settings of service {service}.")
+				response = self.__set_proxy__(service=service, server=self.server, port=self.port)
+				r3sponse.log(response=response)
+				if not r3sponse.success(response): return response
+				response = self.__disable_proxy__(service=service)
+				if not r3sponse.success(response): 
+					r3sponse.log(response=response)
+					return response
+			else:
+				r3sponse.log(f"The proxy settings of service {service} are already installed.")
+		return r3sponse.success_response("Succesfully installed the tor VPN.", log_level=0)
+	def uninstall(self):
+		for service in self.services:
+			response = self.__installed__(service=service)
+			if not r3sponse.success(response): 
+				r3sponse.log(response=response)
+				return response
+			elif response["installed"]:
+				r3sponse.log(f"Uninstalling the proxy settings of service {service}.")
+				response = self.__set_proxy__(service=service, server="", port=0)
+				r3sponse.log(response=response)
+				if not r3sponse.success(response): return response
+				r3sponse.log(f"Disabling proxy service {service}.")
+				response = self.__disable_proxy__(service=service)
+				r3sponse.log(response=response)
+				if not r3sponse.success(response): return response
+			elif response["enabled"]:
+				r3sponse.log(f"Disabling proxy service {service}.")
+				response = self.__disable_proxy__(service=service)
+				r3sponse.log(response=response)
+				if not r3sponse.success(response): return response
+		return r3sponse.success_response("Succesfully uninstalled the tor VPN.", log_level=0)
+	def enable(self, check_tor=True):
+		if check_tor:
+			self.__check_tor__()
+		for service in self.services:
+			response = self.__enable_proxy__(service=service)
+			r3sponse.log(response=response)
+			if not r3sponse.success(response): return response
+		return r3sponse.success_response("Succesfully enabled the tor VPN.", log_level=0)
+	def disable(self):
+		for service in self.services:
+			response = self.__disable_proxy__(service=service)
+			r3sponse.log(response=response)
+			if not r3sponse.success(response): return response
+		return r3sponse.success_response("Succesfully disabled the tor VPN.", log_level=0)
+	def status(self, silent=False):
+		status = {}
+		for service in self.services:
+			response = self.__get_proxy__(service=service)
+			if not r3sponse.success(response): 
+				r3sponse.log(response=response)
+				return response
+			status[service.lower().replace(" ","-")] = response["info"]
+		if not silent:
+			for service, info in status.items():
+				print(f"Service {service}:")
+				for key, value in info.items():
+					print(f" * {key}: {value}")
+		response = netw0rk.network.info()
+		if not r3sponse.success(response):  return response
+		del response["message"] ; del response["error"] ; del response["success"]
+		network = response
+		if not silent:
+			print(f"Network:")
+			for key, value in network.items():
+				print(f" * {key}: {value}")
+		return r3sponse.success_response("Succesfully retieved the status of the tor VPN.", {
+			"status":status,
+			"network":network,
+		}, log_level=0)
+	# system functions.
+	def __disable_proxy__(self, service=None):
+		output = syst3m.utils.__execute_script__(f"networksetup -setsocksfirewallproxystate '{service}' off")
+		if "** Error: Unable to find item in network database." in output:
+			return r3sponse.error_response(f"Service [{service}] does not exist.")
+		response = self.__get_proxy__(service=service)
+		if not r3sponse.success(response): return response
+		success = response["info"]["enabled"] == False
+		if success:
+			return r3sponse.success_response(f"Succesfully disabled proxy service {service}.")
+		else:
+			return r3sponse.error_response(f"Failed to disable proxy service {service}.")
+	def __enable_proxy__(self, service=None):
+		output = syst3m.utils.__execute_script__(f"networksetup -setsocksfirewallproxystate '{service}' on")
+		if "** Error: Unable to find item in network database." in output:
+			return r3sponse.error_response(f"Service [{service}] does not exist.")
+		response = self.__get_proxy__(service=service)
+		if not r3sponse.success(response): return response
+		success = response["info"]["enabled"] == True
+		if success:
+			return r3sponse.success_response(f"Succesfully enabled proxy service {service}.")
+		else:
+			return r3sponse.error_response(f"Failed to enable proxy service {service}.")
+	def __get_proxy__(self, service=None):
+		output = syst3m.utils.__execute_script__(f"networksetup -getsocksfirewallproxy '{service}'")
+		if "** Error: Unable to find item in network database." in output:
+			return r3sponse.error_response(f"Service [{service}] does not exist.")
+		info = {}
+		for line in output.split("\n"):
+			if ":" in line:
+				before,after = line.split(": ")
+				if after == "No": after = False
+				elif after == "Yes": after = True
+				elif after == "": after = None
+				elif after in ["Null", "None", "null", "none"]: after = True
+				else:
+					try: after = int(after)
+					except: a=1
+
+				info[before.lower().replace(" ","_")] = after
+		return r3sponse.success_response(f"Succesfully retrieved the {service} proxy settings.", {"info":info})
+	def __set_proxy__(self, service=None, server=None, port=None, authentication=False, username=None, password=None):
+		command = f"networksetup -setsocksfirewallproxy '{service}' {server} {port}"
+		if authentication:
+			return r3sponse.error_response("Not supported yet.")
+			if username == None or password == None:
+				return r3sponse.error_response("Authentication is enabled and the username / password is null.")
+			command += f" 1 {username} {password}"
+		output = syst3m.utils.__execute_script__(command)
+		if "** Error: Unable to find item in network database." in output:
+			return r3sponse.error_response(f"Service [{service}] does not exist.")
+		response = self.__get_proxy__(service=service)
+		if not r3sponse.success(response): return response
+		success = response["info"]["server"] == server and response["info"]["port"] == port
+		if success:
+			return r3sponse.success_response(f"Succesfully set the proxy setting of service {service}.")
+		else:
+			return r3sponse.error_response(f"Failed set the proxy setting of service.")
+	def __get_services__(self):
+		output = syst3m.utils.__execute_script__("networksetup -listallnetworkservices")
+		if "An asterisk (*) denotes that a network service is disabled." in output: output = output.split("An asterisk (*) denotes that a network service is disabled.\n")[1]
+		services = []
+		for line in output.split("\n"):
+			if line not in [""]:
+				services.append(line)
+		return services
+	def __installed__(self, service=None):
+		response = self.__get_proxy__(service=service)
+		if not r3sponse.success(response): return response
+		return r3sponse.success_response(f"Succesfully checked the {service} proxy installation.", {
+			"installed":response["info"]["server"] == self.server and response["info"]["server"] == self.port,
+			"enabled":response["info"]["enabled"],
+		})
+	def __check_tor__(self):
+		if not self.tor.running():
+			r3sponse.log("&RED&Tor is not running.&END&")
+			r3sponse.log(f"Execute [ $ {ALIAS} --start] to start tor.")
+			#r3sponse.log("&RED&Execute your original command in a different terminal.&END&")
+			#r3sponse.log("&ORANGE&Starting tor for you ...&END&")
+			#self.tor.start()
+			sys.exit(1)
+
+# the tor object class.
+class Tor(object):
+	def __init__(self):
+		a=1
+	def start(self):
+		os.system("tor")
+	def running(self):
+		return "Congratulations" in syst3m.utils.__execute_script__("curl --socks5 localhost:9050 --socks5-hostname localhost:9050 -s https://check.torproject.org/ | cat | grep -m 1 Congratulations | xargs")
+		#
+
+# the cli object class.
+class CLI(cl1.CLI):
+	def __init__(self):
+		cl1.CLI.__init__(self,
+			modes={
+				"--start":"Start tor.",
+				"--install":"Install the tor VPN settings.",
+				"--uninstall":"Uninstall the tor VPN settings.",
+				"--enable":"Enable the tor VPN settings.",
+				"--disable":"Disable the tor VPN settings.",
+				"--status":"Status report of the the tor VPN settings.",
+				"--create-alias":"Install the tor VPN library.",
+				"--help":"Show documentation.",
+			},
+			options={
+				"-c":"Do not clear the console.",
+			},
+			alias=ALIAS,)
+	def start(self):
+		vpn = VPN()
+		
+		# help.
+		if self.arguments_present(["-h", "--help"]):
+			print(self.documentation)
+
+		# install.
+		elif self.argument_present("--start"):
+			vpn.enable(check_tor=False)
+			vpn.tor.start()
+			vpn.disable()
+
+		# install.
+		elif self.argument_present("--install"):
+			vpn.install()
+
+		# uninstall.
+		elif self.argument_present("--uninstall"):
+			vpn.uninstall()
+
+		# enable.
+		elif self.argument_present("--enable"):
+			vpn.enable()
+
+		# disable.
+		elif self.argument_present("--disable"):
+			vpn.disable()
+
+		# status.
+		elif self.argument_present("--status"):
+			vpn.status()
+		
+		# invalid.
+		else:
+			print(self.documentation)
+			print("Selected an invalid mode.")
+
+# main.
+if __name__ == "__main__":
+	cli = CLI()
+	cli.start()

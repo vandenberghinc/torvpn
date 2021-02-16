@@ -17,7 +17,7 @@ if "command not found" in syst3m.utils.__execute_script__("brew -h"):
 		raise ValueError("HomeBrew is not installed.")
 if "command not found" in syst3m.utils.__execute_script__("tor -h"):
 	os.system('brew install tor tor-browser')
-	"command not found" in syst3m.utils.__execute_script__("tor -h"):
+	if "command not found" in syst3m.utils.__execute_script__("tor -h"):
 		raise ValueError("Tor is not installed.")
 if "--create-alias" in sys.argv:
 	os.system(f"cp {__file__} /usr/local/bin/{ALIAS} && chmod +x /usr/local/bin/{ALIAS}")

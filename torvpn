@@ -221,42 +221,41 @@ class CLI(cl1.CLI):
 			},
 			alias=ALIAS,)
 	def start(self):
+		self.arguments.check()
 		vpn = VPN()
 		
 		# help.
-		if self.arguments_present(["-h", "--help"]):
-			print(self.documentation)
+		if self.arguments.present(["-h", "--help"]):
+			self.docs()
 
 		# install.
-		elif self.argument_present("--start"):
+		elif self.arguments.present("--start"):
 			vpn.enable(check_tor=False)
 			vpn.tor.start()
 			vpn.disable()
 
 		# install.
-		elif self.argument_present("--install"):
+		elif self.arguments.present("--install"):
 			vpn.install()
 
 		# uninstall.
-		elif self.argument_present("--uninstall"):
+		elif self.arguments.present("--uninstall"):
 			vpn.uninstall()
 
 		# enable.
-		elif self.argument_present("--enable"):
+		elif self.arguments.present("--enable"):
 			vpn.enable()
 
 		# disable.
-		elif self.argument_present("--disable"):
+		elif self.arguments.present("--disable"):
 			vpn.disable()
 
 		# status.
-		elif self.argument_present("--status"):
+		elif self.arguments.present("--status"):
 			vpn.status()
 		
 		# invalid.
-		else:
-			print(self.documentation)
-			print("Selected an invalid mode.")
+		else: self.invalid()
 
 # main.
 if __name__ == "__main__":

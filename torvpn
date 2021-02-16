@@ -11,13 +11,13 @@ OS = syst3m.defaults.operating_system(supported=["osx"])
 # installation.
 if "-c" not in sys.argv:
 	os.system("clear")
-if "command not found" in syst3m.utils.__execute_script__("brew"):
+if "command not found" in syst3m.utils.__execute_script__("brew -h"):
 	os.system('/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)" && brew doctor')
-	if "command not found" in syst3m.utils.__execute_script__("brew"):
+	if "command not found" in syst3m.utils.__execute_script__("brew -h"):
 		raise ValueError("HomeBrew is not installed.")
-if not os.path.exists("/usr/local/bin/tor"):
+if "command not found" in syst3m.utils.__execute_script__("tor -h"):
 	os.system('brew install tor tor-browser')
-	if not os.path.exists("/usr/local/bin/tor"):
+	"command not found" in syst3m.utils.__execute_script__("tor -h"):
 		raise ValueError("Tor is not installed.")
 if "--create-alias" in sys.argv:
 	os.system(f"cp {__file__} /usr/local/bin/{ALIAS} && chmod +x /usr/local/bin/{ALIAS}")

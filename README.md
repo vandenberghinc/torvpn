@@ -1,7 +1,7 @@
-# TorVPN for OSX
+# TorVPN for MacOS
 Author(s):  Daan van den Bergh<br>
 Copyright:  © 2020 Daan van den Bergh All Rights Reserved<br>
-Supported Operating Systems: osx.
+Supported Operating Systems: macos.
 <br>
 <br>
 <p align="center">
@@ -9,7 +9,7 @@ Supported Operating Systems: osx.
 </p>
 
 ## Description.
-Free system settings VPN through TOR for OSX.
+Free system settings VPN through TOR for MacOS.
 
 ## Installation
 	sudo curl https://raw.githubusercontent.com/vandenberghinc/torvpn/master/torvpn -o /usr/local/bin/torvpn && sudo chmod +x /usr/local/bin/torvpn

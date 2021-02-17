@@ -6,7 +6,7 @@ from r3sponse import r3sponse
 
 # settings.
 ALIAS = "torvpn"
-OS = syst3m.defaults.operating_system(supported=["osx"])
+OS = syst3m.defaults.operating_system(supported=["macos"])
 
 # installation.
 if "-c" not in sys.argv:

@@ -5,7 +5,7 @@ Supported Operating Systems: macos.
 <br>
 <br>
 <p align="center">
-  <img src="https://github.com/vandenberghinc/storage/blob/master/images/logo.png?raw=true" alt="Bergh-Encryption" width="50"/>
+  <img src="https://raw.githubusercontent.com/vandenberghinc/public-storage/master/vandenberghinc/icon/icon.png" alt="Bergh-Encryption" width="50"/>
 </p>
 
 ## Description.

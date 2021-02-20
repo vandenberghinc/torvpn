@@ -35,61 +35,61 @@ class VPN(object):
 	def install(self):
 		for service in self.services:
 			response = self.__installed__(service=service)
-			if not r3sponse.success(response): 
+			if not response.success: 
 				r3sponse.log(response=response)
 				return response
 			elif not response["installed"]:
 				r3sponse.log(f"Installing the proxy settings of service {service}.")
 				response = self.__set_proxy__(service=service, server=self.server, port=self.port)
 				r3sponse.log(response=response)
-				if not r3sponse.success(response): return response
+				if not response.success: return response
 				response = self.__disable_proxy__(service=service)
-				if not r3sponse.success(response): 
+				if not response.success: 
 					r3sponse.log(response=response)
 					return response
 			else:
 				r3sponse.log(f"The proxy settings of service {service} are already installed.")
-		return r3sponse.success_response("Succesfully installed the tor VPN.", log_level=0)
+		return r3sponse.success("Succesfully installed the tor VPN.", log_level=0)
 	def uninstall(self):
 		for service in self.services:
 			response = self.__installed__(service=service)
-			if not r3sponse.success(response): 
+			if not response.success: 
 				r3sponse.log(response=response)
 				return response
 			elif response["installed"]:
 				r3sponse.log(f"Uninstalling the proxy settings of service {service}.")
 				response = self.__set_proxy__(service=service, server="", port=0)
 				r3sponse.log(response=response)
-				if not r3sponse.success(response): return response
+				if not response.success: return response
 				r3sponse.log(f"Disabling proxy service {service}.")
 				response = self.__disable_proxy__(service=service)
 				r3sponse.log(response=response)
-				if not r3sponse.success(response): return response
+				if not response.success: return response
 			elif response["enabled"]:
 				r3sponse.log(f"Disabling proxy service {service}.")
 				response = self.__disable_proxy__(service=service)
 				r3sponse.log(response=response)
-				if not r3sponse.success(response): return response
-		return r3sponse.success_response("Succesfully uninstalled the tor VPN.", log_level=0)
+				if not response.success: return response
+		return r3sponse.success("Succesfully uninstalled the tor VPN.", log_level=0)
 	def enable(self, check_tor=True):
 		if check_tor:
 			self.__check_tor__()
 		for service in self.services:
 			response = self.__enable_proxy__(service=service)
 			r3sponse.log(response=response)
-			if not r3sponse.success(response): return response
-		return r3sponse.success_response("Succesfully enabled the tor VPN.", log_level=0)
+			if not response.success: return response
+		return r3sponse.success("Succesfully enabled the tor VPN.", log_level=0)
 	def disable(self):
 		for service in self.services:
 			response = self.__disable_proxy__(service=service)
 			r3sponse.log(response=response)
-			if not r3sponse.success(response): return response
-		return r3sponse.success_response("Succesfully disabled the tor VPN.", log_level=0)
+			if not response.success: return response
+		return r3sponse.success("Succesfully disabled the tor VPN.", log_level=0)
 	def status(self, silent=False):
 		status = {}
 		for service in self.services:
 			response = self.__get_proxy__(service=service)
-			if not r3sponse.success(response): 
+			if not response.success: 
 				r3sponse.log(response=response)
 				return response
 			status[service.lower().replace(" ","-")] = response["info"]
@@ -99,14 +99,14 @@ class VPN(object):
 				for key, value in info.items():
 					print(f" * {key}: {value}")
 		response = netw0rk.network.info()
-		if not r3sponse.success(response):  return response
+		if not response.success:  return response
 		del response["message"] ; del response["error"] ; del response["success"]
 		network = response
 		if not silent:
 			print(f"Network:")
 			for key, value in network.items():
 				print(f" * {key}: {value}")
-		return r3sponse.success_response("Succesfully retieved the status of the tor VPN.", {
+		return r3sponse.success("Succesfully retieved the status of the tor VPN.", {
 			"status":status,
 			"network":network,
 		}, log_level=0)
@@ -114,29 +114,29 @@ class VPN(object):
 	def __disable_proxy__(self, service=None):
 		output = syst3m.utils.__execute_script__(f"networksetup -setsocksfirewallproxystate '{service}' off")
 		if "** Error: Unable to find item in network database." in output:
-			return r3sponse.error_response(f"Service [{service}] does not exist.")
+			return r3sponse.error(f"Service [{service}] does not exist.")
 		response = self.__get_proxy__(service=service)
-		if not r3sponse.success(response): return response
+		if not response.success: return response
 		success = response["info"]["enabled"] == False
 		if success:
-			return r3sponse.success_response(f"Succesfully disabled proxy service {service}.")
+			return r3sponse.success(f"Succesfully disabled proxy service {service}.")
 		else:
-			return r3sponse.error_response(f"Failed to disable proxy service {service}.")
+			return r3sponse.error(f"Failed to disable proxy service {service}.")
 	def __enable_proxy__(self, service=None):
 		output = syst3m.utils.__execute_script__(f"networksetup -setsocksfirewallproxystate '{service}' on")
 		if "** Error: Unable to find item in network database." in output:
-			return r3sponse.error_response(f"Service [{service}] does not exist.")
+			return r3sponse.error(f"Service [{service}] does not exist.")
 		response = self.__get_proxy__(service=service)
-		if not r3sponse.success(response): return response
+		if not response.success: return response
 		success = response["info"]["enabled"] == True
 		if success:
-			return r3sponse.success_response(f"Succesfully enabled proxy service {service}.")
+			return r3sponse.success(f"Succesfully enabled proxy service {service}.")
 		else:
-			return r3sponse.error_response(f"Failed to enable proxy service {service}.")
+			return r3sponse.error(f"Failed to enable proxy service {service}.")
 	def __get_proxy__(self, service=None):
 		output = syst3m.utils.__execute_script__(f"networksetup -getsocksfirewallproxy '{service}'")
 		if "** Error: Unable to find item in network database." in output:
-			return r3sponse.error_response(f"Service [{service}] does not exist.")
+			return r3sponse.error(f"Service [{service}] does not exist.")
 		info = {}
 		for line in output.split("\n"):
 			if ":" in line:
@@ -150,24 +150,24 @@ class VPN(object):
 					except: a=1
 
 				info[before.lower().replace(" ","_")] = after
-		return r3sponse.success_response(f"Succesfully retrieved the {service} proxy settings.", {"info":info})
+		return r3sponse.success(f"Succesfully retrieved the {service} proxy settings.", {"info":info})
 	def __set_proxy__(self, service=None, server=None, port=None, authentication=False, username=None, password=None):
 		command = f"networksetup -setsocksfirewallproxy '{service}' {server} {port}"
 		if authentication:
-			return r3sponse.error_response("Not supported yet.")
+			return r3sponse.error("Not supported yet.")
 			if username == None or password == None:
-				return r3sponse.error_response("Authentication is enabled and the username / password is null.")
+				return r3sponse.error("Authentication is enabled and the username / password is null.")
 			command += f" 1 {username} {password}"
 		output = syst3m.utils.__execute_script__(command)
 		if "** Error: Unable to find item in network database." in output:
-			return r3sponse.error_response(f"Service [{service}] does not exist.")
+			return r3sponse.error(f"Service [{service}] does not exist.")
 		response = self.__get_proxy__(service=service)
-		if not r3sponse.success(response): return response
+		if not response.success: return response
 		success = response["info"]["server"] == server and response["info"]["port"] == port
 		if success:
-			return r3sponse.success_response(f"Succesfully set the proxy setting of service {service}.")
+			return r3sponse.success(f"Succesfully set the proxy setting of service {service}.")
 		else:
-			return r3sponse.error_response(f"Failed set the proxy setting of service.")
+			return r3sponse.error(f"Failed set the proxy setting of service.")
 	def __get_services__(self):
 		output = syst3m.utils.__execute_script__("networksetup -listallnetworkservices")
 		if "An asterisk (*) denotes that a network service is disabled." in output: output = output.split("An asterisk (*) denotes that a network service is disabled.\n")[1]
@@ -178,8 +178,8 @@ class VPN(object):
 		return services
 	def __installed__(self, service=None):
 		response = self.__get_proxy__(service=service)
-		if not r3sponse.success(response): return response
-		return r3sponse.success_response(f"Succesfully checked the {service} proxy installation.", {
+		if not response.success: return response
+		return r3sponse.success(f"Succesfully checked the {service} proxy installation.", {
 			"installed":response["info"]["server"] == self.server and response["info"]["server"] == self.port,
 			"enabled":response["info"]["enabled"],
 		})

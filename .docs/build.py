@@ -6,7 +6,7 @@ from fil3s import *
 
 # settings.
 root = gfp.base(path=__file__, back=2)
-docs = Files.join(root, "docs", "/")
+docs = Files.join(root, ".docs", "/")
 name = gfp.name(path=root)
 
 # export.
@@ -30,7 +30,7 @@ Python(path=root).build_readme(
 	# include different path's or readme str.
 	include=[Files.join(docs, "additional.md")],
 	# banned sub paths.
-	banned=["docs/build.py"],
+	banned=[".docs/build.py"],
 	# banned names.
 	banned_names=["__main__.py", "utils.py", "daemons.py", "index.py", ".version.py"],
 	# banned basenames.

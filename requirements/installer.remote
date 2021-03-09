@@ -40,7 +40,7 @@ else
 fi
 
 # remote install.
-alias="devos"
+alias="dev0s"
 rm -fr /tmp/$alias
 git clone -q https://github.com/vandenberghinc/$alias /tmp/$alias
 chmod +x /tmp/$alias/requirements/installer

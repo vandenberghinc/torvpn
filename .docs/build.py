@@ -32,7 +32,7 @@ Python(path=root).build_readme(
 	# banned sub paths.
 	banned=[".docs/build.py"],
 	# banned names.
-	banned_names=["__main__.py", "utils.py", "daemons.py", "index.py", ".version.py"],
+	banned_names=["__main__.py", "utils.py", "daemons.py", "index.py", ".version"],
 	# banned basenames.
 	banned_basenames=["utils", "__pycache__", ".legacy", "webserver"],
 	# banned class types.

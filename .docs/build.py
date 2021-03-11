@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 # imports.
-import sys
-from dev0s import *
+import sys, 
+from dev0s.shortcuts import *
 
 # settings.
 root = gfp.base(path=__file__, back=2)

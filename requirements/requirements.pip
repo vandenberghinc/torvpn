@@ -3,6 +3,4 @@
 
 # inc packages.
 dev0s>=2.13.3
-syst3m>=2.14.8
-netw0rk>=1.7.9
 
